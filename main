@@ -1,0 +1,25 @@
+import google.generativeai as palm
+import gradio as gr
+
+palm.configure(api_key='AIzaSyA2yHp9pFT9ILN_z3JH_F2wZty65QSYvLU')
+models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
+model = models[0].name
+
+
+
+def  chatbot(input_text):
+    completion = palm.generate_text(
+        model=model,
+        prompt=input_text,
+        temperature=0,
+        # The maximum length of the response
+        max_output_tokens=800,
+    )
+    return completion.result
+
+go = gr.Interface(
+    fn = chatbot,
+    inputs= gr.inputs.Textbox(lines=1),
+    outputs="text",
+)
+go.launch()
