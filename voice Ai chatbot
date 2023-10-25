@@ -1,0 +1,76 @@
+import google.generativeai as palm
+import gradio as gr
+from gradio.components import Textbox, HTML
+
+import speech_recognition as sr
+import pyttsx3
+palm.configure(api_key='AIzaSyA2yHp9pFT9ILN_z3JH_F2wZty65QSYvLU')
+models = [m for m in palm.list_models() if 'generateText' in m.supported_generation_methods]
+model = models[0].name
+sciquestions = [
+    "Consider yourself as a science teacher and explain the below question to the students in friendly and in easly understandable form by giving the daily life example and adding less history to the content directly approching the matter.and please note to use word 'student' at the stary of the sentance {}:"
+]
+hisquestion = [
+    "Consider yourself as a History teacher and explain the below question to the students in friendly and easly understandable form by telling it in story manner.please note to use word 'student' at the start of the sentance and keep it short(within 100 to 200words if possible)  {}: "
+]
+
+engine = pyttsx3.init('sapi5')
+voices = engine.getProperty('voices')
+# print(voices[1].id)
+engine.setProperty('voice', voices[0].id)
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait()
+
+def takeCommand():
+    #It takes microphone input from the user and returns string output
+
+    r = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        r.pause_threshold = 1
+        audio = r.listen(source)
+
+    try:
+        print("Recognizing...")
+        query = r.recognize_google(audio, language='en-in')
+        print(f"User said: {query}\n")
+
+    except Exception as e:
+        # print(e)
+        print("Say that again please...")
+        return "None"
+    return query
+
+
+def chatbot(text):
+    completion = palm.generate_text(
+        model=model,
+        prompt=text,
+        temperature=0,
+        # The maximum length of the response
+
+        max_output_tokens=800,
+    )
+    return completion.result
+
+def respond(input_text):
+    if input_text:
+        x=input_text.lower
+        question1 = "Is {} a related to science? Reply True or False"
+        question2 = "is {} a related to history of kings? Reply True or False" 
+
+        if "true" in chatbot(question1.format(input_text)).lower():
+            call = chatbot(sciquestions[0].format(input_text))
+        elif "true" in chatbot(question2.format(input_text)).lower():
+            call = chatbot(hisquestion[0].format(input_text))
+        else:
+            call = "No relevant question found."
+        return call
+
+
+while True:
+    query = takeCommand().lower()
+    print(respond(query))
+    speak(respond(query))
